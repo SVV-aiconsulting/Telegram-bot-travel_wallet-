@@ -1,0 +1,29 @@
+# systemd: автозапуск бота после перезагрузки Linux-сервера (VPS).
+#
+# Установка:
+#   1. Отредактируйте User= и пути WorkingDirectory / ExecStart
+#   2. sudo cp deploy/travel-wallet-bot.service /etc/systemd/system/
+#   3. sudo systemctl daemon-reload
+#   4. sudo systemctl enable travel-wallet-bot
+#   5. sudo systemctl start travel-wallet-bot
+#   6. sudo systemctl status travel-wallet-bot
+#
+# Логи: journalctl -u travel-wallet-bot -f
+
+[Unit]
+Description=Travel Wallet Telegram Bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=YOUR_LINUX_USER
+Group=YOUR_LINUX_USER
+WorkingDirectory=/home/YOUR_LINUX_USER/API_currency_converter
+ExecStart=/home/YOUR_LINUX_USER/API_currency_converter/scripts/run_bot.sh
+Restart=always
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
