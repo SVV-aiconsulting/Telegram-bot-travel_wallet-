@@ -20,8 +20,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
-          port: ${{ secrets.VPS_PORT }}
-          script_stop: true
+          port: 22
           script: |
             set -euo pipefail
             DEPLOY_PATH="${{ secrets.VPS_DEPLOY_PATH }}"
