@@ -48,7 +48,9 @@ fi
 
 chmod 600 .env
 
-docker compose build
+echo "Первый запуск: скачайте образ из GHCR (после merge в main и успешного workflow)."
+echo "Если пакет приватный — выполните на VPS: docker login ghcr.io"
+docker compose pull
 docker compose up -d
 
 echo ""
