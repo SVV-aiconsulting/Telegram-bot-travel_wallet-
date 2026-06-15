@@ -1,7 +1,7 @@
 services:
   bot:
-    build: .
-    image: travel-wallet-bot:latest
+    image: ghcr.io/svv-aiconsulting/travel-wallet-bot:latest
+    pull_policy: always
     container_name: travel-wallet-bot
     restart: unless-stopped
     env_file:
