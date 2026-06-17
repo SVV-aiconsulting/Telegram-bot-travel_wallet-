@@ -423,12 +423,15 @@ docker compose -f loki+grafana+promtail/docker-compose.yml ps
 
 **Где:** **браузер**, Grafana.
 
-Файл дашборда лежит **на VPS** в проекте: `loki+grafana+promtail/dashboard-travel-wallet-bot.json`.  
-Можно скачать его на ПК через SFTP/файловый менеджер хостинга или открыть Import и указать путь, если работаете с сервера.
+Файл: `loki+grafana+promtail/dashboard-travel-wallet-bot.json` — дашборд **Travel Wallet Bot — Activity Dashboard** (действия пользователя, системные события, ошибки).
+
+Файл лежит **на VPS** в каталоге проекта после `git pull`. Можно скачать на ПК через SFTP/файловый менеджер хостинга.
 
 1. **Dashboards** → **New** → **Import**
 2. **Upload JSON file** → выберите `dashboard-travel-wallet-bot.json`
 3. В поле **Loki** — ваш datasource → **Import**
+
+Если дашборд уже был импортирован раньше — импортируйте заново (или **Replace existing**) после обновления файла на VPS.
 
 ---
 
