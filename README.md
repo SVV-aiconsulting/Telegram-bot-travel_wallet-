@@ -109,10 +109,17 @@ sudo systemctl enable --now travel-wallet-bot
 
 Стек логирования разворачивается отдельным compose-файлом в папке `loki+grafana+promtail/` и поднимается автоматически в workflow деплоя.
 
-- Grafana: `http://62.113.103.96:3000`
-- Логин/пароль по умолчанию: `admin` / `admin`
+- Grafana UI: `http://<VPS_HOST>:3000` (подставьте IP или домен вашего VPS)
+- Учётные данные Grafana задаются на сервере в `loki+grafana+promtail/.env` (шаблон — `loki+grafana+promtail/.env.example`), в git не коммитятся
 - Loki datasource URL в Grafana: `http://loki:3100`
 - Запрос в Explore для логов бота: `{container="travel-wallet-bot"}`
+
+Перед первым запуском на VPS:
+
+```bash
+cp loki+grafana+promtail/.env.example loki+grafana+promtail/.env
+# задайте надёжный пароль администратора Grafana
+```
 
 Если нужно поднять стек вручную на VPS:
 
@@ -120,6 +127,19 @@ sudo systemctl enable --now travel-wallet-bot
 docker compose -f loki+grafana+promtail/docker-compose.yml pull
 docker compose -f loki+grafana+promtail/docker-compose.yml up -d --remove-orphans
 ```
+
+### Импорт дашборда Grafana
+
+Готовый дашборд лежит в файле `loki+grafana+promtail/dashboard-travel-wallet-bot.json`.
+
+1. Откройте Grafana: `http://<VPS_HOST>:3000` и войдите с учётными данными из `loki+grafana+promtail/.env`.
+2. Добавьте datasource **Loki** (если ещё нет): **Connections → Data sources → Add data source → Loki**, URL: `http://loki:3100`, **Save & test**.
+3. Импортируйте дашборд: **Dashboards → New → Import**.
+4. Нажмите **Upload JSON file** и выберите `dashboard-travel-wallet-bot.json` с VPS или с локальной копии репозитория.
+   - На VPS файл доступен после `git pull` в каталоге деплоя: `<VPS_DEPLOY_PATH>/loki+grafana+promtail/dashboard-travel-wallet-bot.json`.
+5. В поле **Loki** выберите созданный datasource и нажмите **Import**.
+
+Дашборд показывает статистику логов, операции с БД, уровни (INFO/WARNING/ERROR) и поток логов контейнера `travel-wallet-bot`.
 
 ## Управление в Telegram
 

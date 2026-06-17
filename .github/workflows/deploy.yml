@@ -73,7 +73,12 @@ jobs:
             docker compose pull
             docker compose up -d --remove-orphans
 
-            docker compose -f loki+grafana+promtail/docker-compose.yml pull
-            docker compose -f loki+grafana+promtail/docker-compose.yml up -d --remove-orphans
+            if [[ ! -f loki+grafana+promtail/.env ]]; then
+              echo "WARN: loki+grafana+promtail/.env not found — logging stack skipped"
+              echo "Create it once: cp loki+grafana+promtail/.env.example loki+grafana+promtail/.env"
+            else
+              docker compose -f loki+grafana+promtail/docker-compose.yml pull
+              docker compose -f loki+grafana+promtail/docker-compose.yml up -d --remove-orphans
+            fi
 
             docker image prune -f
