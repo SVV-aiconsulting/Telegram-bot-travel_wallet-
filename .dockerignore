@@ -28,6 +28,8 @@ Thumbs.db
 .DS_Store
 
 *.docx
+DEPLOY_GITHUB_VPS_STUDENT_GUIDE.md
+deploy/AUTODEPLOY_REPORT.md
 README.md
 deploy/
 scripts/

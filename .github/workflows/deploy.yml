@@ -73,4 +73,7 @@ jobs:
             docker compose pull
             docker compose up -d --remove-orphans
 
+            docker compose -f loki+grafana+promtail/docker-compose.yml pull
+            docker compose -f loki+grafana+promtail/docker-compose.yml up -d --remove-orphans
+
             docker image prune -f
