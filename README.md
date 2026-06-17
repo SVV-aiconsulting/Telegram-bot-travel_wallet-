@@ -1,31 +1,112 @@
 # Миникошелёк путешественника
 
-Учебный Telegram-бот на Python: учёт расходов в поездках с конвертацией валют. Пользователь создаёт путешествия, вводит расходы числом в валюте страны пребывания — бот пересчитывает в домашнюю валюту, ведёт баланс и историю.
+Telegram-бот на Python для учёта расходов в поездках. Вы создаёте путешествие, вводите суммы в валюте страны — бот пересчитывает в домашнюю валюту и ведёт баланс.
 
-Проект построен на **ООП и слоях**: Telegram-фронтенд, backend-сервисы, слой SQLite, низкоуровневый клиент API.
+---
 
-## Возможности
+## Как читать эту инструкцию
 
-- Несколько путешествий на одного пользователя Telegram; переключение активного
-- Удаление путешествия (с расходами) из раздела «Мои путешествия»
-- Домашняя валюта и валюта пребывания; курс: **1 destination = X home**
-- Курс с [exchangerate.host](https://exchangerate.host) (`/convert`), ручной ввод, кэш 24 часа
-- При сбое API — кнопки «Повторить запрос» / «Ввести вручную»
-- Справочник стран в SQLite (5 языков); общие валюты (EUR для Германии, Мальты и др.)
-- Быстрый ввод расхода числом (`100`, `99.50`, `99,50`) с подтверждением
-- Inline-меню и slash-команды; тексты `старт`, `меню` открывают главное меню
-- Состояние диалога (создание поездки) в БД — переживает перезапуск бота
-- Подсказки после создания поездки: как ввести сумму расхода
+В проекте участвуют **три места**. В каждом шаге указано, где вы сейчас работаете:
 
-## Требования
+| Обозначение | Где это | Как туда попасть |
+|-------------|---------|------------------|
+| **Ваш компьютер** | Домашний ПК или ноутбук (Windows / Linux / macOS) | Терминал: PowerShell, cmd или bash на своём устройстве |
+| **VPS (сервер)** | Удалённая машина в интернете, где бот работает 24/7 | Подключение по SSH, например: `ssh root@<IP_сервера>` |
+| **Браузер** | Chrome, Firefox и т.д. | Открываете ссылку на своём компьютере |
+| **Telegram** | Приложение или web.telegram.org | Ищете своего бота по имени от BotFather |
 
-- Python 3.10+
-- Токен Telegram-бота ([@BotFather](https://t.me/BotFather))
-- Ключ API [exchangerate.host](https://exchangerate.host)
+**Терминал** — это чёрное или синее окно, куда вводятся команды. На Windows: **PowerShell** или **Терминал** в Cursor/VS Code.
 
-## Конфигурация
+**Корень проекта** — папка с файлами `main.py`, `docker-compose.yml`, `README.md`. Все команды ниже выполняются **из этой папки**, если не сказано иное.
 
-Скопируйте `.env.example` в `.env`:
+---
+
+## Содержание
+
+1. [Что нужно заранее](#1-что-нужно-заранее)
+2. [Выберите свой сценарий](#2-выберите-свой-сценарий)
+3. [Сценарий A: запуск на компьютере через Python](#3-сценарий-a-запуск-на-компьютере-через-python)
+4. [Сценарий B: запуск в Docker на компьютере](#4-сценарий-b-запуск-в-docker-на-компьютере)
+5. [Сценарий C: деплой на VPS (сервер 24/7)](#5-сценарий-c-деплой-на-vps-сервер-247)
+6. [Сценарий D: логи в Grafana на VPS](#6-сценарий-d-логи-в-grafana-на-vps)
+7. [Как пользоваться ботом в Telegram](#7-как-пользоваться-ботом-в-telegram)
+8. [Если что-то не работает](#8-если-что-то-не-работает)
+9. [Справка для разработчиков](#9-справка-для-разработчиков)
+
+---
+
+## 1. Что нужно заранее
+
+**Где:** браузер и Telegram на **вашем компьютере**.
+
+| Что получить | Где взять |
+|--------------|-----------|
+| Токен Telegram-бота | [@BotFather](https://t.me/BotFather) → команда `/newbot` |
+| Ключ API валют | Регистрация на [exchangerate.host](https://exchangerate.host) |
+
+Оба значения позже запишете в файл `.env` в папке проекта (шаблон — `.env.example`).
+
+**Важно:** файл `.env` с ключами **не загружайте в GitHub** — там секреты.
+
+---
+
+## 2. Выберите свой сценарий
+
+| Цель | Раздел | Где выполняются шаги |
+|------|--------|----------------------|
+| Быстро проверить бота у себя | [A](#3-сценарий-a-запуск-на-компьютере-через-python) | Только **ваш компьютер** |
+| Запустить бота в контейнере у себя | [B](#4-сценарий-b-запуск-в-docker-на-компьютере) | Только **ваш компьютер** |
+| Бот работает круглосуточно в интернете | [C](#5-сценарий-c-деплой-на-vps-сервер-247) | В основном **VPS** |
+| Смотреть логи в веб-интерфейсе | [D](#6-сценарий-d-логи-в-grafana-на-vps) | Команды на **VPS**, Grafana в **браузере** |
+
+**Рекомендация для новичка:** сначала **A**, потом при желании **B**, затем **C**. Раздел **D** — по желанию, после **C**.
+
+---
+
+## 3. Сценарий A: запуск на компьютере через Python
+
+Проверка бота без Docker. Все шаги — на **вашем компьютере**.
+
+### Шаг 1. Скачайте проект
+
+**Где:** терминал на **вашем компьютере**.
+
+```bash
+git clone https://github.com/SVV-aiconsulting/Telegram-bot-travel_wallet-.git
+cd Telegram-bot-travel_wallet-
+```
+
+После `cd` вы в **корне проекта** — дальше команды из этой папки.
+
+### Шаг 2. Установите Python-зависимости
+
+**Где:** терминал на **вашем компьютере**, в корне проекта.
+
+Нужен **Python 3.10+**. Проверка: `python --version` или `python3 --version`.
+
+```bash
+python -m venv venv
+```
+
+**Windows (PowerShell):**
+
+```powershell
+venv\Scripts\activate
+pip install -r requirements.txt
+copy .env.example .env
+```
+
+**Linux / macOS:**
+
+```bash
+source venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+```
+
+### Шаг 3. Заполните файл `.env`
+
+**Где:** **ваш компьютер** — откройте файл `.env` в блокноте, Cursor или VS Code (файл лежит в корне проекта).
 
 ```env
 TELEGRAM_BOT_TOKEN=ваш_токен_от_BotFather
@@ -35,40 +116,25 @@ DATABASE_PATH=travel_wallet.sqlite3
 
 | Переменная | Обязательна | Описание |
 |------------|-------------|----------|
-| `TELEGRAM_BOT_TOKEN` | да | Токен бота |
-| `CURRENCY_API_KEY` | да | `access_key` для exchangerate.host |
-| `DATABASE_PATH` | нет | Путь к файлу SQLite (по умолчанию `travel_wallet.sqlite3`) |
+| `TELEGRAM_BOT_TOKEN` | да | Токен от BotFather |
+| `CURRENCY_API_KEY` | да | Ключ exchangerate.host |
+| `DATABASE_PATH` | нет | Файл базы (по умолчанию `travel_wallet.sqlite3`) |
 
-Загрузка: `config.load_config()` — без токена и ключа приложение не стартует (понятное сообщение об ошибке).
+### Шаг 4. Запустите бота
 
-## Установка и запуск
+**Где:** терминал на **вашем компьютере**, в корне проекта (виртуальное окружение должно быть активно — в начале строки часто видно `(venv)`).
 
 ```bash
-python -m venv venv
-```
-
-**Windows:**
-
-```powershell
-venv\Scripts\activate
-pip install -r requirements.txt
-copy .env.example .env
-# отредактируйте .env
 python main.py
 ```
 
-**Linux / macOS:**
+**Где проверить:** **Telegram** — найдите бота и отправьте `/start`.
 
-```bash
-source venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-python main.py
-```
+Окно терминала должно оставаться открытым, пока бот работает. При первом запуске создаётся файл базы SQLite.
 
-При первом запуске создаётся база, таблицы и **справочник стран/валют** (см. ниже).
+### Шаг 5 (опционально). Запуск в фоне на ПК
 
-### Фоновый режим и автоперезапуск процесса
+**Где:** терминал на **вашем компьютере**, в корне проекта.
 
 ```powershell
 # Windows
@@ -76,235 +142,359 @@ python main.py
 ```
 
 ```bash
-# Linux
+# Linux / macOS
 chmod +x scripts/run_bot.sh
 ./scripts/run_bot.sh
 ```
 
-Логи: `logs/bot.log`.
+Логи: файл `logs/bot.log` в папке проекта.
 
-### Автозапуск после перезагрузки сервера
+---
 
-Данные в SQLite сохраняются. После перезагрузки ОС нужно снова поднять процесс бота.
+## 4. Сценарий B: запуск в Docker на компьютере
 
-**Windows** — PowerShell от администратора:
+Бот в контейнере на **вашем компьютере** (не на сервере). Удобно, если готовитесь к деплою на VPS.
 
-```powershell
-Set-ExecutionPolicy -Scope Process Bypass
-cd "путь\к\API_currency_converter"
-.\scripts\install_autostart_windows.ps1
-```
+### Шаг 1. Установите Docker на свой компьютер
 
-Задача Планировщика: `TravelWalletTelegramBot`.
+**Где:** **ваш компьютер** (не VPS).
 
-**Linux (VPS)** — отредактируйте пути в `deploy/travel-wallet-bot.service`, затем:
+| ОС | Что установить | Ссылка |
+|----|----------------|--------|
+| Windows | Docker Desktop | [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/) |
+| macOS | Docker Desktop | та же ссылка |
+| Linux | Docker Engine + Compose plugin | [docs.docker.com/engine/install](https://docs.docker.com/engine/install/) |
 
-```bash
-sudo cp deploy/travel-wallet-bot.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now travel-wallet-bot
-```
+После установки **перезагрузите компьютер** (на Windows это часто обязательно).
 
-## Логирование: Loki + Grafana + Promtail
-
-Стек логирования разворачивается отдельным compose-файлом в папке `loki+grafana+promtail/` и поднимается автоматически в workflow деплоя.
-
-- Grafana UI: `http://<VPS_HOST>:3000` (подставьте IP или домен вашего VPS)
-- Учётные данные Grafana задаются на сервере в `loki+grafana+promtail/.env` (шаблон — `loki+grafana+promtail/.env.example`), в git не коммитятся
-- Loki datasource URL в Grafana: `http://loki:3100`
-- Запрос в Explore для логов бота: `{container="travel-wallet-bot"}`
-
-Перед первым запуском на VPS:
+**Проверка** — в терминале на **вашем компьютере**:
 
 ```bash
+docker --version
+docker compose version
+```
+
+Обе команды должны вывести номер версии без ошибки.
+
+### Шаг 2. Скачайте проект (если ещё не скачали)
+
+**Где:** терминал на **вашем компьютере**.
+
+```bash
+git clone https://github.com/SVV-aiconsulting/Telegram-bot-travel_wallet-.git
+cd Telegram-bot-travel_wallet-
+```
+
+### Шаг 3. Создайте и заполните `.env`
+
+**Где:** **ваш компьютер**, корень проекта.
+
+```bash
+cp .env.example .env
+```
+
+Откройте `.env` в редакторе и вставьте `TELEGRAM_BOT_TOKEN` и `CURRENCY_API_KEY` (см. [раздел 1](#1-что-нужно-заранее)).
+
+### Шаг 4. Запустите контейнер с ботом
+
+**Где:** терминал на **вашем компьютере**, в корне проекта.
+
+**Вариант 1** — собрать образ из кода (обычно при первом запуске у себя):
+
+```bash
+docker compose build
+docker compose up -d
+```
+
+**Вариант 2** — скачать готовый образ с GitHub (как на сервере):
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+### Шаг 5. Проверьте работу
+
+**Где:** терминал на **вашем компьютере**:
+
+```bash
+docker compose ps
+docker compose logs -f bot
+```
+
+`Ctrl+C` — выйти из просмотра логов (бот продолжит работать).
+
+**Где проверить:** **Telegram** — `/start`.
+
+Остановить бота: `docker compose down` (в корне проекта на **вашем компьютере**).
+
+Данные бота хранятся в Docker volume `travel_wallet_data` — при обычном перезапуске контейнера не пропадают.
+
+---
+
+## 5. Сценарий C: деплой на VPS (сервер 24/7)
+
+Бот крутится на **удалённом сервере (VPS)**. У вас должен быть VPS с IP-адресом и доступ по SSH (логин/пароль или ключ).
+
+Дальше команды с пометкой **на VPS** вводятся **после подключения по SSH**, а не на домашнем ПК.
+
+### Шаг 1. Подключитесь к VPS
+
+**Где:** терминал на **вашем компьютере**.
+
+```bash
+ssh <пользователь>@<IP_сервера>
+```
+
+Пример: `ssh root@203.0.113.10` — подставьте свои данные от хостинга (Beget, Timeweb и т.д.).
+
+После входа приглашение в терминале меняется — вы на **VPS**.
+
+### Шаг 2. Установите на VPS git и Docker
+
+**Где:** терминал **на VPS** (после `ssh`).
+
+Проверка:
+
+```bash
+git --version
+docker --version
+docker compose version
+```
+
+Если чего-то нет — установите по инструкции вашего хостинга или [docs.docker.com/engine/install](https://docs.docker.com/engine/install/) (для Linux на сервере).
+
+### Шаг 3. Скачайте проект на VPS
+
+**Где:** терминал **на VPS**.
+
+```bash
+git clone https://github.com/SVV-aiconsulting/Telegram-bot-travel_wallet-.git
+cd Telegram-bot-travel_wallet-
+```
+
+Запомните полный путь к папке — он понадобится для автодеплоя. Пример: `/root/travel-wallet-bot` или `/home/ubuntu/travel-wallet-bot`.
+
+### Шаг 4. Первый запуск (скрипт bootstrap)
+
+**Где:** терминал **на VPS**, в корне проекта.
+
+```bash
+chmod +x deploy/bootstrap-vps.sh
+./deploy/bootstrap-vps.sh
+```
+
+Скрипт:
+
+1. Создаст `.env`, если его нет.
+2. Если `.env` новый — остановится и попросит заполнить ключи:
+
+   ```bash
+   nano .env
+   ```
+
+   Вставьте токены, сохраните: `Ctrl+O`, Enter, выход: `Ctrl+X`.
+
+3. Запустите скрипт **ещё раз**:
+
+   ```bash
+   ./deploy/bootstrap-vps.sh
+   ```
+
+4. Скрипт скачает Docker-образ и запустит бота.
+
+### Шаг 5. Проверьте бота
+
+**Где:** терминал **на VPS**:
+
+```bash
+docker compose ps
+docker compose logs -f bot
+```
+
+**Где проверить:** **Telegram** — `/start` (бот должен отвечать, даже если ваш ПК выключен).
+
+### Шаг 6. Обновление бота вручную
+
+**Где:** терминал **на VPS**, в каталоге проекта на сервере.
+
+```bash
+cd <путь_к_проекту_на_VPS>
+git pull
+docker compose pull
+docker compose up -d
+```
+
+### Шаг 7 (опционально). Автодеплой при push в GitHub
+
+**Где настраивается:** сайт **GitHub** (браузер на вашем компьютере) → репозиторий → **Settings** → **Secrets and variables** → **Actions**.
+
+**Что происходит:** при merge в ветку `main` GitHub сам подключается к **VPS** по SSH и выполняет `git pull` + `docker compose pull` + `docker compose up -d`.
+
+| Secret в GitHub | Что указать |
+|-----------------|-------------|
+| `VPS_HOST` | IP или домен **вашего** VPS |
+| `VPS_USER` | SSH-пользователь (часто `root`) |
+| `VPS_SSH_PRIVATE_KEY` | Приватный SSH-ключ (без пароля на ключе) |
+| `VPS_DEPLOY_PATH` | Полный путь к проекту **на VPS** (из шага 3) |
+| `GHCR_PULL_TOKEN` | Только если Docker-образ в GHCR приватный |
+
+Токены бота (`TELEGRAM_BOT_TOKEN`, `CURRENCY_API_KEY`) храните **только** в `.env` **на VPS**, не в GitHub.
+
+### Автозапуск после перезагрузки VPS
+
+**Где:** **VPS**.
+
+При Docker и `restart: unless-stopped` контейнер поднимется снова, когда на сервере запустится служба Docker. Отдельно ничего делать не нужно, если бот уже был запущен через `docker compose up -d`.
+
+---
+
+## 6. Сценарий D: логи в Grafana на VPS
+
+Смотреть логи бота в браузере. Нужен уже работающий бот на **VPS** ([сценарий C](#5-сценарий-c-деплой-на-vps-сервер-247)).
+
+### Шаг 1. Подключитесь к VPS
+
+**Где:** терминал на **вашем компьютере** → `ssh <пользователь>@<IP_сервера>`.
+
+### Шаг 2. Создайте `.env` для Grafana
+
+**Где:** терминал **на VPS**, корень проекта на сервере.
+
+```bash
+cd <путь_к_проекту_на_VPS>
 cp loki+grafana+promtail/.env.example loki+grafana+promtail/.env
-# задайте надёжный пароль администратора Grafana
+nano loki+grafana+promtail/.env
 ```
 
-Если нужно поднять стек вручную на VPS:
+Задайте надёжный пароль в `GF_SECURITY_ADMIN_PASSWORD`. Сохраните файл.
+
+### Шаг 3. Запустите стек логирования
+
+**Где:** терминал **на VPS**, корень проекта.
 
 ```bash
 docker compose -f loki+grafana+promtail/docker-compose.yml pull
 docker compose -f loki+grafana+promtail/docker-compose.yml up -d --remove-orphans
 ```
 
-### Импорт дашборда Grafana
+Проверка:
 
-Готовый дашборд лежит в файле `loki+grafana+promtail/dashboard-travel-wallet-bot.json`.
+```bash
+docker compose -f loki+grafana+promtail/docker-compose.yml ps
+```
 
-1. Откройте Grafana: `http://<VPS_HOST>:3000` и войдите с учётными данными из `loki+grafana+promtail/.env`.
-2. Добавьте datasource **Loki** (если ещё нет): **Connections → Data sources → Add data source → Loki**, URL: `http://loki:3100`, **Save & test**.
-3. Импортируйте дашборд: **Dashboards → New → Import**.
-4. Нажмите **Upload JSON file** и выберите `dashboard-travel-wallet-bot.json` с VPS или с локальной копии репозитория.
-   - На VPS файл доступен после `git pull` в каталоге деплоя: `<VPS_DEPLOY_PATH>/loki+grafana+promtail/dashboard-travel-wallet-bot.json`.
-5. В поле **Loki** выберите созданный datasource и нажмите **Import**.
+Должны быть запущены контейнеры `loki`, `grafana`, `promtail`.
 
-Дашборд показывает статистику логов, операции с БД, уровни (INFO/WARNING/ERROR) и поток логов контейнера `travel-wallet-bot`.
+> При настроенном автодеплое стек поднимется сам при следующем deploy, если файл `loki+grafana+promtail/.env` уже есть **на VPS**.
 
-## Управление в Telegram
+### Шаг 4. Откройте Grafana в браузере
 
-### Slash-команды
+**Где:** **браузер на вашем компьютере** (не на сервере).
+
+Адрес: `http://<IP_вашего_VPS>:3000`
+
+Логин и пароль — из файла `loki+grafana+promtail/.env` **на VPS** (поля `GF_SECURITY_ADMIN_USER` и `GF_SECURITY_ADMIN_PASSWORD`).
+
+Если страница не открывается — на VPS у хостинга должен быть открыт порт **3000** (настройки файрвола / панель Beget и т.п.).
+
+### Шаг 5. Подключите источник данных Loki
+
+**Где:** **браузер**, интерфейс Grafana.
+
+1. Меню слева → **Connections** → **Data sources** → **Add data source**
+2. Выберите **Loki**
+3. URL: `http://loki:3100`
+4. **Save & test** — должно быть успешно
+
+### Шаг 6. Посмотрите логи бота
+
+**Где:** **браузер**, Grafana → **Explore**.
+
+Запрос:
+
+```logql
+{container="travel-wallet-bot"}
+```
+
+Нажмите **Run query**. Должны появиться строки логов контейнера бота.
+
+### Шаг 7 (опционально). Импорт дашборда
+
+**Где:** **браузер**, Grafana.
+
+Файл дашборда лежит **на VPS** в проекте: `loki+grafana+promtail/dashboard-travel-wallet-bot.json`.  
+Можно скачать его на ПК через SFTP/файловый менеджер хостинга или открыть Import и указать путь, если работаете с сервера.
+
+1. **Dashboards** → **New** → **Import**
+2. **Upload JSON file** → выберите `dashboard-travel-wallet-bot.json`
+3. В поле **Loki** — ваш datasource → **Import**
+
+---
+
+## 7. Как пользоваться ботом в Telegram
+
+**Где:** приложение **Telegram** на телефоне или компьютере.
+
+### Команды
 
 | Команда | Действие |
 |---------|----------|
 | `/start`, `/menu` | Главное меню |
 | `/newtrip` | Создать путешествие |
 | `/switch` | Мои путешествия |
-| `/balance` | Баланс активного путешествия |
+| `/balance` | Баланс |
 | `/history` | Последние 10 расходов |
 | `/setrate` | Изменить курс |
 
-Также работают сообщения: `старт`, `start`, `меню`, `menu`.
+Также работают слова: `старт`, `start`, `меню`, `menu`.
 
-### Главное меню (inline)
+### Типичный сценарий
 
-- ➕ Создать новое путешествие
-- 🧳 Мои путешествия
-- 💰 Баланс
-- 📜 История расходов
-- 💱 Изменить курс
-- 🏠 Главное меню (в подразделах)
+1. `/newtrip` — страна, валюта, курс, стартовая сумма.
+2. Отправить число (`100` или `99,50`) — расход в валюте страны.
+3. Подтвердить — баланс обновится.
+4. `/balance` — посмотреть остаток.
 
-### Создание путешествия
+---
 
-1. Страна отправления → валюта (справочник или код `RUB`, `USD`)
-2. Страна назначения → валюта
-3. Курс с API (`1 CNY = X RUB`) — подтвердить, ввести вручную или повторить API при ошибке
-4. Начальная сумма в домашней валюте → баланс в обеих валютах
+## 8. Если что-то не работает
 
-### Расходы
+| Проблема | Где смотреть | Что проверить |
+|----------|--------------|---------------|
+| Бот не отвечает в Telegram | **VPS** или **ваш ПК** — где запущен бот | `python main.py` или `docker compose ps` — контейнер/процесс должен быть **Up** |
+| Ошибка при старте | Там же, где запускали | Файл `.env` в **корне проекта**, верные токены |
+| «Не нашёл валюту» | **Ваш компьютер** или **VPS** | `python scripts/reseed_country_reference.py` в корне проекта |
+| Ошибка курса валют | `.env` на машине, где крутится бот | Ключ `CURRENCY_API_KEY`; в боте кнопка «Повторить» |
+| `docker compose` не найден | Машина, где запускаете | Docker установлен? `docker compose version` |
+| Не качается образ | **VPS** | `docker login ghcr.io` — если образ приватный |
+| Grafana не открывается | **Браузер** + **VPS** | Контейнер `grafana` запущен? Порт 3000 открыт у хостинга? |
+| Пусто в логах Grafana | **VPS** | Контейнер `promtail` запущен? Бот `travel-wallet-bot` работает? |
 
-При активном путешествии отправьте **число** в чат (сумма в валюте пребывания) → подтверждение → списание с баланса. Допускается отрицательный остаток с предупреждением.
+---
 
-### Мои путешествия
+## 9. Справка для разработчиков
 
-Нажатие на поездку → карточка с кнопками:
+Технические детали. Для первого запуска можно не читать.
 
-- **Сделать активным**
-- **Удалить путешествие** (с подтверждением, удаляются и расходы)
-
-## API exchangerate.host
-
-| Endpoint | Назначение в проекте |
-|----------|----------------------|
-| `GET /convert` | Рабочая конвертация и курс (`amount=1`, параметр `access_key`) |
-| `GET /list` | Только при **инициализации справочника** валют в БД |
-
-В runtime бота запросы курсов идут **только через `/convert`**. Кэшируется курс пары, не сумма.
-
-### Кэширование (24 часа)
-
-1. Запрос: `from`, `to`, `amount=1` → поле `result` — курс.
-2. Сохранение в `rate_cache`.
-3. Повтор в течение 24 ч — без вызова API.
-4. Сбой API + старый кэш — использование с предупреждением; без кэша — ручной ввод или повтор.
-
-### Формула курса
-
-**1 единица валюты пребывания = X единиц домашней валюты**
-
-- Расход: `сумма_дом = сумма_пребывания × курс`
-- Стартовый баланс: `баланс_пребывания = сумма_дом / курс`
-- Смена курса: баланс в валюте пребывания фиксирован, домашний пересчитывается
-
-## Справочник стран и валют
-
-Таблицы (создаются при старте, данные в `data/country_names_seed.py`):
-
-| Таблица | Содержимое |
-|---------|------------|
-| `supported_currencies` | Коды валют с `/list` API (+ резервный список) |
-| `country_currency_names` | Название страны → `currency_code`, языки **en, ru, es, fr, de** |
-
-Для **EUR** перечислены страны еврозоны (Германия, Мальта, Франция, …) — одна валюта на много стран.
-
-Поиск: `CountryResolverService` (страна или код `USD`).
-
-Обновить справочник после правок в seed-файле:
-
-```bash
-python scripts/reseed_country_reference.py
-```
-
-## База данных SQLite
-
-Файл задаётся в `DATABASE_PATH` (по умолчанию `travel_wallet.sqlite3`).
-
-| Таблица | Назначение |
-|---------|------------|
-| `trips` | Путешествия, баланс, курс, активное |
-| `expenses` | История расходов |
-| `rate_cache` | Кэш курсов валютных пар |
-| `user_states` | FSM и черновики (pending-расход) |
-| `supported_currencies` | Справочник кодов валют |
-| `country_currency_names` | Справочник стран → валюта |
-
-Низкоуровневый доступ: `database.py` → класс `SQLiteDatabaseManager` (не менять под бизнес-логику).
-
-## Структура проекта
+### Структура проекта
 
 ```text
-API_currency_converter/
-├── main.py                      # Точка входа, infinity_polling
-├── config.py                    # AppConfig из .env
-├── container.py                 # DI: create_container()
-├── database.py                  # Универсальный SQLiteDatabaseManager
-├── currency_manager.py          # HTTP: /convert и /list (для справочника)
-├── country_currency.py          # Устаревшие хелперы (используйте resolver)
-│
-├── data/                        # Статические данные для заполнения БД
-│   ├── __init__.py              # Пакет data
-│   └── country_names_seed.py    # Названия стран (5 языков) → валюта
-│
-├── domain/                      # Модели, DTO, ошибки, утилиты (без Telegram и SQL)
-│   ├── models.py                # Trip, Expense, RateCacheEntry, UserState
-│   ├── dto.py                   # DTO для обмена между слоями
-│   ├── errors.py                # CurrencyApiError, TripNotFoundError, …
-│   ├── number_utils.py          # Парсинг и формат денежных сумм
-│   ├── states.py                # Имена FSM-состояний (BotState)
-│   └── text_normalize.py        # Нормализация текста для поиска в справочнике
-│
-├── database_layer/              # SQL-репозитории поверх database.py
-│   ├── schema.py                # Таблицы: trips, expenses, rate_cache, user_states
-│   ├── reference_schema.py      # Таблицы: supported_currencies, country_currency_names
-│   ├── reference_seed.py        # Заполнение справочника при старте (/list + seed)
-│   ├── trip_database.py         # CRUD путешествий
-│   ├── expense_database.py      # CRUD расходов
-│   ├── rate_cache_database.py   # CRUD кэша курсов
-│   ├── user_state_database.py   # FSM и payload_json в SQLite
-│   └── country_currency_database.py  # Поиск страны → код валюты
-│
-├── services/                    # Бизнес-логика (без Telegram)
-│   ├── trip_service.py          # Путешествия, баланс, удаление, смена активного
-│   ├── expense_service.py       # Расходы, предпросмотр, подтверждение
-│   ├── currency_service.py      # Курс через API + кэш 24 ч
-│   ├── country_resolver_service.py  # Страна или код → валюта (справочник БД)
-│   ├── creation_service.py      # Сценарий создания путешествия (черновик FSM)
-│   └── rate_change_service.py   # Смена курса активного путешествия
-│
-├── bot/                         # Telegram-фронтенд
-│   ├── handlers.py              # Команды, callback, текстовые сообщения
-│   ├── keyboards.py             # Inline-клавиатуры
-│   ├── messages.py              # Тексты ответов и подсказки
-│   └── states.py                # Реэкспорт domain.states для bot/
-│
-├── scripts/                     # Служебные скрипты запуска и обслуживания
-│   ├── run_bot.ps1              # Windows: запуск с автоперезапуском
-│   ├── run_bot.sh               # Linux: запуск с автоперезапуском
-│   ├── install_autostart_windows.ps1  # Автозапуск через Планировщик Windows
-│   └── reseed_country_reference.py    # Перезаполнить справочник стран
-│
-├── deploy/                      # Развёртывание на сервере
-│   └── travel-wallet-bot.service  # Unit systemd для Linux VPS
-│
-├── logs/                        # Логи run_bot.* (bot.log)
-├── requirements.txt             # Зависимости Python
-├── .env.example                 # Шаблон переменных окружения
-├── .env                         # Локальные секреты (не коммитить)
-└── README.md                    # Документация проекта
+├── main.py                 # Точка входа
+├── config.py               # Настройки из .env
+├── container.py            # Сборка зависимостей (DI)
+├── bot/                    # Telegram: handlers, клавиатуры, тексты
+├── services/               # Бизнес-логика
+├── database_layer/         # Работа с SQLite
+├── domain/                 # Модели, DTO, ошибки
+├── deploy/                 # bootstrap-vps.sh, systemd unit
+├── loki+grafana+promtail/  # Стек логирования
+├── Dockerfile
+├── docker-compose.yml
+└── .github/workflows/      # CI/CD
 ```
 
-## Архитектура слоёв
+### Архитектура слоёв
 
 ```text
 Telegram (bot/)  →  services/  →  database_layer/  →  database.py
@@ -312,55 +502,32 @@ Telegram (bot/)  →  services/  →  database_layer/  →  database.py
                   currency_manager.py  →  exchangerate.host
 ```
 
-| Слой | Ответственность | Не делает |
-|------|-----------------|-----------|
-| `bot/` | Сообщения, кнопки, вызов сервисов | SQL, расчёты, HTTP к API |
-| `services/` | Бизнес-логика, DTO | Telegram, прямой SQL |
-| `database_layer/` | SQL, модели из БД | Telegram, формулы |
-| `currency_manager.py` | Только HTTP API | Путешествия, SQLite |
-| `database.py` | Универсальный SQLite | Доменная логика |
+### База данных SQLite
 
-Сборка зависимостей:
+| Таблица | Назначение |
+|---------|------------|
+| `trips` | Путешествия |
+| `expenses` | Расходы |
+| `rate_cache` | Кэш курсов (24 ч) |
+| `user_states` | Состояние диалога |
+| `supported_currencies` | Справочник валют |
+| `country_currency_names` | Справочник стран |
 
-```python
-from config import load_config
-from container import create_container
+### API exchangerate.host
 
-config = load_config()
-container = create_container(config)
+| Endpoint | Когда используется |
+|----------|-------------------|
+| `GET /convert` | Получение курса |
+| `GET /list` | Первое заполнение справочника |
 
-# Примеры
-trip = container.trip_service.get_active_trip(telegram_user_id=123)
-currency = container.country_resolver.lookup_currency_by_country("Мальта")  # EUR
-```
-
-Другой frontend (CLI, Web) подключается через тот же `create_container()` — без дублирования логики в обработчиках.
-
-## Зависимости
+### Зависимости Python
 
 ```text
 pytelegrambotapi   # Telegram Bot API
-requests           # HTTP к exchangerate.host
-python-dotenv      # Переменные из .env
+requests           # HTTP-запросы
+python-dotenv      # Чтение .env
 ```
-
-## Скрипты обслуживания
-
-| Скрипт | Назначение |
-|--------|------------|
-| `scripts/reseed_country_reference.py` | Перезаполнить справочник стран |
-| `scripts/run_bot.ps1` / `run_bot.sh` | Запуск с автоперезапуском при падении |
-| `scripts/install_autostart_windows.ps1` | Автозапуск в Windows |
-
-## Устранение неполадок
-
-| Симптом | Что проверить |
-|---------|----------------|
-| Бот молчит на сообщения | Запущен ли `python main.py`; в логе нет ошибок SQLite/потоков |
-| «Не нашёл валюту» для известной страны | `python scripts/reseed_country_reference.py` |
-| Ошибка API курса | Ключ в `.env`, лимиты exchangerate.host; кнопка «Повторить» |
-| Старая база без справочника | Перезапуск бота (справочник заполнится, если таблица пуста) |
 
 ---
 
-Учебный проект ZEROCODER. Код с docstring на русском в ключевых модулях.
+Учебный проект ZEROCODER.
