@@ -105,6 +105,22 @@ sudo systemctl daemon-reload
 sudo systemctl enable --now travel-wallet-bot
 ```
 
+## Логирование: Loki + Grafana + Promtail
+
+Стек логирования разворачивается отдельным compose-файлом в папке `loki+grafana+promtail/` и поднимается автоматически в workflow деплоя.
+
+- Grafana: `http://62.113.103.96:3000`
+- Логин/пароль по умолчанию: `admin` / `admin`
+- Loki datasource URL в Grafana: `http://loki:3100`
+- Запрос в Explore для логов бота: `{container="travel-wallet-bot"}`
+
+Если нужно поднять стек вручную на VPS:
+
+```bash
+docker compose -f loki+grafana+promtail/docker-compose.yml pull
+docker compose -f loki+grafana+promtail/docker-compose.yml up -d --remove-orphans
+```
+
 ## Управление в Telegram
 
 ### Slash-команды
